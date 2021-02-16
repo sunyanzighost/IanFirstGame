@@ -73,10 +73,13 @@ Plugins/*/Intermediate/*
 # Cache files for the editor to use
 DerivedDataCache/*
 
-# Ignore everything in Content folder
-Content/*
+# Ignore everything in Content folder but specific folders
+!Content/
 
-# Except the below folders
+Content/*
+!/Content/IanFirstGame/
+
+/Content/IanFirstGame/*
 !/Content/IanFirstGame/Enemies/
 !/Content/IanFirstGame/GameMode/
 !/Content/IanFirstGame/GameplayMechanics/
