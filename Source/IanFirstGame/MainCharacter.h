@@ -39,9 +39,9 @@ private:
 	class UCameraComponent* Camera;
 
 	// Reference to the overlapping item
-	class AItem* OverappingItem;
+	class AItem* OverlappingItem;
 
-	// Referece to the current equipped weapon
+	// Reference to the current equipped weapon
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	class AWeapon* EquippedWeapon;
 
@@ -147,7 +147,7 @@ public:
 	void StopSprint();
 
 	// Setters for the overlapping item
-	FORCEINLINE void SetOverlappingItem(AItem* Target) { OverappingItem = Target; }
+	FORCEINLINE void SetOverlappingItem(AItem* Target) { OverlappingItem = Target; }
 
 	// Use item
 	void UseItem();

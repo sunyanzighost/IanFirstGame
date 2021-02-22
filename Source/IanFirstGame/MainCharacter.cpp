@@ -101,7 +101,6 @@ void AMainCharacter::IncrementHealth(float Amount)
 }
 
 // Increment soul
-
 void AMainCharacter::IncrementSoul(int32 Amount)
 {
 	Soul += Amount;
@@ -303,7 +302,7 @@ void AMainCharacter::Tick(float DeltaTime)
 	switch (StaminaStatus)
 	{
 	case EStaminaStatus::ESS_Normal:
-		if (bSprintKeyDown) //When sprinting
+		if (bSprintKeyDown) // When sprinting
 		{
 			Stamina -= DeltaStamina;
 			Stamina = FMath::Clamp(Stamina, 0.f, MaxStamina);
@@ -319,14 +318,14 @@ void AMainCharacter::Tick(float DeltaTime)
 		}
 		break;
 	case EStaminaStatus::ESS_BelowMinimum:
-		if (bSprintKeyDown) //When sprinting
+		if (bSprintKeyDown) // When sprinting
 		{
 			Stamina -= DeltaStamina;
 			Stamina = FMath::Clamp(Stamina, 0.f, MaxStamina);
 			if (Stamina <= 0.f)
 			{
 				SetStaminaStatus(EStaminaStatus::ESS_Exhausted);
-				SetPlayerStatus(EPlayerStatus::EPS_Normal);
+				SetPlayerStatus(EPlayerStatus::EPS_Normal); // Change the character speed back to normal by setting the PlayerStatus variable
 			}
 		}
 		else // When not sprinting
@@ -439,19 +438,19 @@ void AMainCharacter::Sprint()
 	bSprintKeyDown = true;
 
 	if (Stamina < MinSprintRequriedStamina) return; // Early return if the stamina has not reach the min. requirement for sprinting
-	SetPlayerStatus(EPlayerStatus::EPS_Sprinting);
+	SetPlayerStatus(EPlayerStatus::EPS_Sprinting); // Change the character speed to sprinting speed
 }
 
 void AMainCharacter::StopSprint()
 {
 	bSprintKeyDown = false;
-	SetPlayerStatus(EPlayerStatus::EPS_Normal);
+	SetPlayerStatus(EPlayerStatus::EPS_Normal); // Change the character speed back to normal
 }
 
 // Use item
 void AMainCharacter::UseItem()
 {
-	if (AWeapon* Weapon = Cast<AWeapon>(OverappingItem))
+	if (AWeapon* Weapon = Cast<AWeapon>(OverlappingItem))
 	{
 		Weapon->Equip(this);
 		SetOverlappingItem(nullptr);
@@ -472,21 +471,21 @@ void AMainCharacter::SetClosestEnemyAsTarget()
 	TArray<AActor*> OverlappingEnemies;
 	GetOverlappingActors(OverlappingEnemies, EnemyFilter); // Get hold of all the overlapping enemies and store in a Tarray
 
-	if (OverlappingEnemies.Num() == 0) //Early return if there is no overlapping enemy
+	if (OverlappingEnemies.Num() == 0) // Early return if there is no overlapping enemy
 	{
 		if (MainPlayerController)
 		{
-			MainPlayerController->HideEnemyHealthBar();
-			MainPlayerController->SetEnemyTargetForHealthBar(nullptr);
+			MainPlayerController->HideEnemyHealthBar(); // Hide the enemy health bar
+			MainPlayerController->SetEnemyTargetForHealthBar(nullptr); // Clear the enemy target for the health bar
 		}
 		return;
 	}
 
-	AEnemy* ClosestEnemy = Cast<AEnemy>(OverlappingEnemies[0]); // Set the first enemy in the array as the closest one first
+	AEnemy* ClosestEnemy = Cast<AEnemy>(OverlappingEnemies[0]); // Assume the first enemy in the array as the closest one first
 
 	FVector PlayerLocation = GetActorLocation();  // Get the location of the player
 
-	if (!ClosestEnemy) return; //Early return if there is no ref.
+	if (!ClosestEnemy) return; // Early return if there is no ref.
 
 	float ClosestDistance = FVector::Distance(PlayerLocation, ClosestEnemy->GetActorLocation()); // Calculate the distance between the player and the "closest enemy"
 
@@ -532,25 +531,13 @@ void AMainCharacter::Attack()
 
 		if (!CombatMontage) return; // Early return if no ref.
 
-		int32 Skill = FMath::RandRange(0, 2);
+		int32 Skill = FMath::RandRange(0, CombatMontage->CompositeSections.Num() - 1);
 
-		switch (Skill)
-		{
-		case 0:
-			PlayerAnimInstance->Montage_Play(CombatMontage, 1.0f);
-			PlayerAnimInstance->Montage_JumpToSection(FName("Attack_1"), CombatMontage);
-			break;
-		case 1:
-			PlayerAnimInstance->Montage_Play(CombatMontage, 1.0f);
-			PlayerAnimInstance->Montage_JumpToSection(FName("Attack_2"), CombatMontage);
-			break;
-		case 2:
-			PlayerAnimInstance->Montage_Play(CombatMontage, 1.0f);
-			PlayerAnimInstance->Montage_JumpToSection(FName("Attack_3"), CombatMontage);
-			break;
-		default:
-			;
-		}
+		PlayerAnimInstance->Montage_Play(CombatMontage, 1.0f);
+
+		FName SectionName = CombatMontage->CompositeSections[Skill].SectionName;
+
+		PlayerAnimInstance->Montage_JumpToSection(SectionName, CombatMontage);
 
 		// Play swing sound
 		EquippedWeapon->PlaySwingSound();
@@ -612,8 +599,9 @@ void AMainCharacter::SetEquippedWeapon(AWeapon* Weapon)
 {
 	if (EquippedWeapon)
 	{
-		EquippedWeapon->Destroy();
+		EquippedWeapon->Destroy(); // Destroy the current weapon if the character is holding one
 	}
+	
 	EquippedWeapon = Weapon;
 }
 
