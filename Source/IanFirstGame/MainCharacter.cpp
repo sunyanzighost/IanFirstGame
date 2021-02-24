@@ -32,6 +32,9 @@ AMainCharacter::AMainCharacter()
 	// Set up camera component
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(SpringArm);
+
+	// Set up ability system component
+	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("Ability System Component"));
 	
 	// Make the character DOES NOT move according to the controller yaw
 	bUseControllerRotationYaw = false;
@@ -290,6 +293,23 @@ FString AMainCharacter::GetCurrentMapName()
 	MapName.RemoveFromStart(GetWorld()->StreamingLevelsPrefix);
 
 	return MapName;
+}
+
+/** Returns the ability system component to use for this actor. It may live on another actor, such as a Pawn using the PlayerState's component */
+UAbilitySystemComponent* AMainCharacter::GetAbilitySystemComponent() const
+{
+	return AbilitySystemComponent;
+}
+
+// Acquire single ability
+void AMainCharacter::AcquireAbility(TSubclassOf<UGameplayAbility> AbilityToAcquire)
+{
+	if(AbilitySystemComponent)
+	{
+		AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(AbilityToAcquire));
+
+		AbilitySystemComponent->InitAbilityActorInfo(this, this);
+	}
 }
 
 // Called every frame

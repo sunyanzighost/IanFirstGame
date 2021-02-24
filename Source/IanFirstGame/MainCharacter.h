@@ -3,6 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
+
+#include "AbilitySystemInterface.h"
+#include "AbilitySystemComponent.h"
+#include "Abilities/GameplayAbility.h"
 #include "GameFramework/Character.h"
 #include "MainCharacter.generated.h"
 
@@ -27,7 +31,7 @@ enum class EStaminaStatus : uint8
 
 
 UCLASS()
-class IANFIRSTGAME_API AMainCharacter : public ACharacter
+class IANFIRSTGAME_API AMainCharacter : public ACharacter, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
@@ -37,6 +41,9 @@ private:
 	class USpringArmComponent* SpringArm;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* Camera;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	UAbilitySystemComponent* AbilitySystemComponent;
 
 	// Reference to the overlapping item
 	class AItem* OverlappingItem;
@@ -116,6 +123,10 @@ private:
 
 	// GameInstance variable
 	class UIanFirstGame_GameInstance* GameInstance;
+
+	// GameplayAbilities
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Gameplay Ability", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<UGameplayAbility> HealthRegeneration;
 
 public:
 	// Sets default values for this character's properties
@@ -246,6 +257,12 @@ public:
 
 	// Get current map name
 	FString GetCurrentMapName();
+
+	/** Returns the ability system component to use for this actor. It may live on another actor, such as a Pawn using the PlayerState's component */
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+
+	// Acquire single ability
+	void AcquireAbility(TSubclassOf<UGameplayAbility> AbilityToAcquire);
 
 protected:
 	// Called when the game starts or when spawned
