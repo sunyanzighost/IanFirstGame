@@ -589,6 +589,7 @@ void AMainCharacter::Die()
 	}
 }
 
+/** Called when the actor falls out of the world 'safely' (below KillZ and such) */
 void AMainCharacter::FellOutOfWorld(const UDamageType& dmgType)
 {
 	Die();

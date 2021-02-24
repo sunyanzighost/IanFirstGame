@@ -11,19 +11,19 @@ AHiddenStairSteps::AHiddenStairSteps()
 	PrimaryActorTick.bCanEverTick = true;
 	
 	// Number of hidden step needed
-	NumberOfStairSteps = 5;
+	NumberOfStairSteps = 6;
 
 	CurrentStairStepNumber = 0;
 	
 	// Variables for setting a random location for the next stair
-	MinY = 350.f;
-	MaxY = 400.f;
+	MinY = 450.f;
+	MaxY = 550.f;
 
-	MinZ = 150.f;
-	MaxZ = 250.f;
+	MinZ = 50.f;
+	MaxZ = 80.f;
 
 	// WaitTime before spawning the next stair steps
-	HiddenStairStepsWaitTime = 1.5f;
+	HiddenStairStepsWaitTime = 2.5f;
 }
 
 // Called when the game starts or when spawned
@@ -54,9 +54,17 @@ void AHiddenStairSteps::SpawnStairs()
 	AHiddenStair* HiddenStair = GetWorld()->SpawnActor<AHiddenStair>(SingleHiddenStep, StartLocation, StartRotation);
 	HiddenStair->RaiseStair();
 	
-	StartLocation -= DeltaVector;
+	StartLocation.Z += DeltaVector.Z;
+
+	StartLocation.Y -= DeltaVector.Y;
 
 	CurrentStairStepNumber++;
+
+	// For the last step, spawn a higher Z location
+	if(CurrentStairStepNumber == (NumberOfStairSteps - 1))
+	{
+		StartLocation.Z += 300.f;
+	}
 
 	// Spawn the remaining stairs
 	if(CurrentStairStepNumber < NumberOfStairSteps)

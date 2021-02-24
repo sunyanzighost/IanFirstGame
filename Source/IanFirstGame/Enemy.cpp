@@ -97,7 +97,7 @@ void AEnemy::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (PlayerTarget && !bAttacking) // Interp to face the player when there is a vaild player target and not in the action of attacking
+	if (PlayerTarget && !bAttacking) // Interp to face the player when there is a valid player target and not in the action of attacking
 	{
 		FRotator TargetRotation = GetLookAtPlayerTargetYawRotation(PlayerTarget);
 		FRotator NewRotation = FMath::RInterpTo(GetActorRotation(), TargetRotation, DeltaTime, InterpToPlayerSpeed);
@@ -250,6 +250,7 @@ void AEnemy::WeaponBox2BeginOverlap(UPrimitiveComponent* OverlappedComponent, AA
 	}
 }
 
+// Get the yaw rotation in the direction of the player to the enemy target
 FRotator AEnemy::GetLookAtPlayerTargetYawRotation(AMainCharacter* Target)
 {
 	FRotator LookAtPlayerTargetYawRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Target->GetActorLocation());
