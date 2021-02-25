@@ -42,8 +42,13 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* Camera;
 
+	// AbilitySystem component
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	UAbilitySystemComponent* AbilitySystemComponent;
+
+	// AttributeSet component
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	class UMainCharacterAttributeSet* AttributeSetComponent;
 
 	// Reference to the overlapping item
 	class AItem* OverlappingItem;
@@ -126,7 +131,7 @@ private:
 
 	// GameplayAbilities
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Gameplay Ability", meta = (AllowPrivateAccess = "true"))
-	TSubclassOf<UGameplayAbility> HealthRegeneration;
+	TSubclassOf<UGameplayAbility> Melee;
 
 public:
 	// Sets default values for this character's properties
@@ -263,6 +268,9 @@ public:
 
 	// Acquire single ability
 	void AcquireAbility(TSubclassOf<UGameplayAbility> AbilityToAcquire);
+
+	// When the health attribute being changed
+	void OnHealthChange(float CurrentValue, float MaxValue);
 
 protected:
 	// Called when the game starts or when spawned

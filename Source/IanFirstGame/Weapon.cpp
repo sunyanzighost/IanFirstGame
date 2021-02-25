@@ -2,6 +2,8 @@
 
 
 #include "Weapon.h"
+
+#include "AbilitySystemBlueprintLibrary.h"
 #include "Components/BoxComponent.h"
 #include "MainCharacter.h"
 #include "Engine/SkeletalMeshSocket.h"
@@ -10,6 +12,7 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "Enemy.h"
 #include "FenceSwitch.h"
+#include "GameplayTagsManager.h"
 #include "HiddenStair.h"
 #include "HiddenStairSteps.h"
 
@@ -88,8 +91,18 @@ void AWeapon::CombatBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AA
 		if (AEnemy* Enemy = Cast<AEnemy>(OtherActor)) // Only deal damage when the overlapped actor is an enemy
 		{
 			if (!WeaponInstigator || !DamageType) return; // Early return if no ref.
-			UGameplayStatics::ApplyDamage(Enemy, Damage, WeaponInstigator, this, DamageType);
-			UE_LOG(LogTemp, Warning, TEXT("Current health: %f"), Enemy->GetHealth());
+			/*UGameplayStatics::ApplyDamage(Enemy, Damage, WeaponInstigator, this, DamageType);
+			UE_LOG(LogTemp, Warning, TEXT("Current health: %f"), Enemy->GetHealth());*/
+
+			// Send a gameplay event to the player melee ability
+			FGameplayTag DamageEventTag = UGameplayTagsManager::Get().RequestGameplayTag(FName("Ability.Melee.Damage"));
+
+			FGameplayEventData DamagePayload;
+			DamagePayload.Instigator = PlayerCharacter;
+			DamagePayload.Target = Enemy;
+			DamagePayload.EventTag = DamageEventTag;
+			
+			UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(PlayerCharacter, DamageEventTag, DamagePayload);
 
 			// Play enemy hit sound
 			if (EnemyHitSound)

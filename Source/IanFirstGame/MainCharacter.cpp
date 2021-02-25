@@ -14,6 +14,7 @@
 #include "IanFirstGameSaveGame.h"
 #include "IanFirstGame_GameInstance.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "MainCharacterAttributeSet.h"
 #include "WeaponStorage.h"
 
 // Sets default values
@@ -35,6 +36,9 @@ AMainCharacter::AMainCharacter()
 
 	// Set up ability system component
 	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("Ability System Component"));
+
+	// Set up the attribute set component
+	AttributeSetComponent = CreateDefaultSubobject<UMainCharacterAttributeSet>(TEXT("Attribute Set Component"));
 	
 	// Make the character DOES NOT move according to the controller yaw
 	bUseControllerRotationYaw = false;
@@ -46,7 +50,7 @@ AMainCharacter::AMainCharacter()
 	// Default values
 	InterpToEnemySpeed = 10.f;
 
-	MaxHealth = 100.f;
+	MaxHealth = AttributeSetComponent->MaxHealth.GetCurrentValue();
 	Health = MaxHealth;
 
 	MaxStamina = 200.f;
@@ -93,6 +97,17 @@ void AMainCharacter::BeginPlay()
 		}
 
 		GameInstance->SetLevelSwitched(false);
+	}
+
+	if(AttributeSetComponent)
+	{
+		AttributeSetComponent->OnHealthChange.AddDynamic(this, &AMainCharacter::OnHealthChange);
+	}
+
+	// Acquire abilities
+	if(Melee)
+	{
+		AcquireAbility(Melee);
 	}
 }
 
@@ -293,23 +308,6 @@ FString AMainCharacter::GetCurrentMapName()
 	MapName.RemoveFromStart(GetWorld()->StreamingLevelsPrefix);
 
 	return MapName;
-}
-
-/** Returns the ability system component to use for this actor. It may live on another actor, such as a Pawn using the PlayerState's component */
-UAbilitySystemComponent* AMainCharacter::GetAbilitySystemComponent() const
-{
-	return AbilitySystemComponent;
-}
-
-// Acquire single ability
-void AMainCharacter::AcquireAbility(TSubclassOf<UGameplayAbility> AbilityToAcquire)
-{
-	if(AbilitySystemComponent)
-	{
-		AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(AbilityToAcquire));
-
-		AbilitySystemComponent->InitAbilityActorInfo(this, this);
-	}
 }
 
 // Called every frame
@@ -545,19 +543,29 @@ void AMainCharacter::Attack()
 		bAttacking = true;
 
 		// Get the animinstance of the player
-		UAnimInstance* PlayerAnimInstance = GetMesh()->GetAnimInstance();
+		// UAnimInstance* PlayerAnimInstance = GetMesh()->GetAnimInstance();
+		//
+		// if (!PlayerAnimInstance || !CombatMontage) return; // Early return if no ref.
+		//
+		// if (!CombatMontage) return; // Early return if no ref.
+		//
+		// int32 Skill = FMath::RandRange(0, CombatMontage->CompositeSections.Num() - 1);
+		//
+		// PlayerAnimInstance->Montage_Play(CombatMontage, 1.0f);
+		//
+		// FName SectionName = CombatMontage->CompositeSections[Skill].SectionName;
+		//
+		// PlayerAnimInstance->Montage_JumpToSection(SectionName, CombatMontage);
 
-		if (!PlayerAnimInstance || !CombatMontage) return; // Early return if no ref.
-
-		if (!CombatMontage) return; // Early return if no ref.
-
-		int32 Skill = FMath::RandRange(0, CombatMontage->CompositeSections.Num() - 1);
-
-		PlayerAnimInstance->Montage_Play(CombatMontage, 1.0f);
-
-		FName SectionName = CombatMontage->CompositeSections[Skill].SectionName;
-
-		PlayerAnimInstance->Montage_JumpToSection(SectionName, CombatMontage);
+		// Activate the melee ability
+		if (Melee)
+		{
+			AbilitySystemComponent->TryActivateAbilityByClass(Melee);
+		}
+		else
+		{
+			AbilitySystemComponent->TargetConfirm();
+		}
 
 		// Play swing sound
 		EquippedWeapon->PlaySwingSound();
@@ -638,5 +646,34 @@ void AMainCharacter::SetPlayerStatus(EPlayerStatus Status)
 	else
 	{
 		GetCharacterMovement()->MaxWalkSpeed = RunningSpeed;
+	}
+}
+
+/** Returns the ability system component to use for this actor. It may live on another actor, such as a Pawn using the PlayerState's component */
+UAbilitySystemComponent* AMainCharacter::GetAbilitySystemComponent() const
+{
+	return AbilitySystemComponent;
+}
+
+// Acquire single ability
+void AMainCharacter::AcquireAbility(TSubclassOf<UGameplayAbility> AbilityToAcquire)
+{
+	if(AbilitySystemComponent)
+	{
+		AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(AbilityToAcquire));
+
+		AbilitySystemComponent->InitAbilityActorInfo(this, this);
+	}
+}
+
+// When the health attribute being changed
+void AMainCharacter::OnHealthChange(float CurrentValue, float MaxValue)
+{
+	Health = CurrentValue;
+	MaxHealth = MaxValue;
+	
+	if(CurrentValue <= 0.f)
+	{
+		Die();
 	}
 }
