@@ -3,11 +3,15 @@
 #pragma once
 
 #include "CoreMinimal.h"
+
+#include "AbilitySystemInterface.h"
+#include "AbilitySystemComponent.h"
+#include "Abilities/GameplayAbility.h"
 #include "GameFramework/Character.h"
 #include "Enemy.generated.h"
 
 UCLASS()
-class IANFIRSTGAME_API AEnemy : public ACharacter
+class IANFIRSTGAME_API AEnemy : public ACharacter, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
@@ -24,6 +28,14 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	UStaticMeshComponent* WeaponMesh;
+
+	// AbilitySystem component
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	UAbilitySystemComponent* AbilitySystemComponent;
+
+	// AttributeSet component
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	class UEnemyAttributeSet* AttributeSetComponent;
 
 	// Ref. to the AIController
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Controllers", meta = (AllowPrivateAccess = "true"))
@@ -183,6 +195,13 @@ public:
 
 	// Getters for the AIController
 	FORCEINLINE AEnemyAIController* GetAIController() { return AIController; }
+	
+	/** Returns the ability system component to use for this actor. It may live on another actor, such as a Pawn using the PlayerState's component */
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+	
+	// When the health attribute being changed
+	UFUNCTION()
+	void OnHealthChange(float CurrentValue, float MaxValue);
 
 protected:
 	// Called when the game starts or when spawned

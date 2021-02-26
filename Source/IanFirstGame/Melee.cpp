@@ -5,6 +5,8 @@
 
 #include "GameplayTagsManager.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
+#include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
+#include "AbilitySystemBlueprintLibrary.h"
 
 // Default constructor
 UMelee::UMelee()
@@ -12,9 +14,10 @@ UMelee::UMelee()
 	// Set its own tags, and also the tags to be cancelled
 	AbilityTags.AddTag(UGameplayTagsManager::Get().RequestGameplayTag(FName("Ability.Melee")));
 	CancelAbilitiesWithTag.AddTag(UGameplayTagsManager::Get().RequestGameplayTag(FName("Ability")));
+
+	// Default values
+	GameplayEffectLevel = 1.f;
 }
-
-
 
 // BeginPlay() of the ability
 void UMelee::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
@@ -43,6 +46,34 @@ void UMelee::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGam
 		MontageProxy->OnBlendOut.AddDynamic(this, &UMelee::AbilityFinish);
 		MontageProxy->OnCancelled.AddDynamic(this, &UMelee::AbilityFinish);
 		MontageProxy->OnInterrupted.AddDynamic(this, &UMelee::AbilityFinish);
+	}
+
+	// Listen to the specific gameplay event of specific tag
+	FGameplayTag DamageTag = UGameplayTagsManager::Get().RequestGameplayTag(FName("Ability.Melee.Damage"));
+
+	UAbilityTask_WaitGameplayEvent* DamageEvent = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(this, DamageTag);
+
+	// Bind and trigger function to be called after the event is received
+	if (DamageEvent)
+	{
+		DamageEvent->EventReceived.AddDynamic(this, &UMelee::AbilityDamage);
+		DamageEvent->Activate();
+	}
+}
+
+// Deal damage function
+void UMelee::AbilityDamage(FGameplayEventData Payload)
+{
+	// Get the target from the Payload data, cast from const AActor* to AActor*
+	AActor* EnemyTarget = const_cast<AActor*>(Payload.Target);
+
+	// Make game data from the target actor, for the ApplyGameplayEffectToTarget function
+	FGameplayAbilityTargetDataHandle TargetDataHandle = UAbilitySystemBlueprintLibrary::AbilityTargetDataFromActor(EnemyTarget);	
+
+	if(MeleeEffect)
+	{
+		UGameplayAbility::ApplyGameplayEffectToTarget(AbilityHandle, AbilityActorInfo, AbilityActivationInfo, TargetDataHandle, MeleeEffect, GameplayEffectLevel);
+		UE_LOG(LogTemp, Warning, TEXT("Applying gameplay effect to enemy!"));
 	}
 }
 

@@ -15,6 +15,7 @@
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BrainComponent.h"
 #include "EnemyAIController.h"
+#include "EnemyAttributeSet.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 // Sets default values
@@ -37,6 +38,12 @@ AEnemy::AEnemy()
 
 	WeaponMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponMesh"));
 
+	// Set up ability system component
+	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("Ability system component"));
+
+	// Set up attribute set component
+	AttributeSetComponent = CreateDefaultSubobject<UEnemyAttributeSet>(TEXT("AttributeSet Component"));
+
 	// Set the collision for the weapons response only to player pawn
 	WeaponBox1->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	WeaponBox1->SetCollisionResponseToAllChannels(ECR_Ignore);
@@ -53,7 +60,7 @@ AEnemy::AEnemy()
 	
 	MoveToWaitTime = 1.5f;
 
-	MaxHealth = 300.f;
+	MaxHealth = AttributeSetComponent->Health.GetCurrentValue();
 	Health = MaxHealth;
 	
 	DestroyWaitTime = 2.f;
@@ -90,6 +97,8 @@ void AEnemy::BeginPlay()
 
 	WeaponBox1->OnComponentBeginOverlap.AddDynamic(this, &AEnemy::WeaponBox1BeginOverlap);
 	WeaponBox2->OnComponentBeginOverlap.AddDynamic(this, &AEnemy::WeaponBox2BeginOverlap);
+
+	AttributeSetComponent->OnHealthChange.AddDynamic(this, &AEnemy::OnHealthChange);
 }
 
 // Called every frame
@@ -393,5 +402,23 @@ void AEnemy::DeathEnd()
 void AEnemy::RemoveFromGame()
 {
 	Destroy();
+}
+
+UAbilitySystemComponent* AEnemy::GetAbilitySystemComponent() const
+{
+	return AbilitySystemComponent;
+}
+
+// When the health attribute being changed
+void AEnemy::OnHealthChange(float CurrentValue, float MaxValue)
+{
+	Health = CurrentValue;
+
+	UE_LOG(LogTemp, Warning, TEXT("I am being attacked!"));
+	
+	if(CurrentValue <= 0.f)
+	{
+		Die();
+	}
 }
 

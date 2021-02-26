@@ -26,12 +26,19 @@ private:
 	FGameplayAbilitySpecHandle AbilityHandle;
 	const FGameplayAbilityActorInfo* AbilityActorInfo;
     FGameplayAbilityActivationInfo AbilityActivationInfo;
+
+	float GameplayEffectLevel;
 	
 public:
 	// Default Constructor
 	UMelee();
 
+	// Deal damage function
+	UFUNCTION()
+	void AbilityDamage(FGameplayEventData Payload);
+
 	// To be called to end the ability
+	UFUNCTION()
 	void AbilityFinish();
 	
 

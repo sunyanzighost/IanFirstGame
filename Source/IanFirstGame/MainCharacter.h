@@ -270,6 +270,7 @@ public:
 	void AcquireAbility(TSubclassOf<UGameplayAbility> AbilityToAcquire);
 
 	// When the health attribute being changed
+	UFUNCTION()
 	void OnHealthChange(float CurrentValue, float MaxValue);
 
 protected:

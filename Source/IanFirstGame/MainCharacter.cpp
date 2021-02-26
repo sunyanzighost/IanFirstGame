@@ -670,8 +670,7 @@ void AMainCharacter::AcquireAbility(TSubclassOf<UGameplayAbility> AbilityToAcqui
 void AMainCharacter::OnHealthChange(float CurrentValue, float MaxValue)
 {
 	Health = CurrentValue;
-	MaxHealth = MaxValue;
-	
+
 	if(CurrentValue <= 0.f)
 	{
 		Die();
