@@ -68,6 +68,8 @@ AMainCharacter::AMainCharacter()
 
 	MaxSoul = 99999;
 	Soul = 0;
+
+	PushStunFrictionRestoreTime = 0.5f;
 }
 
 // Called when the game starts or when spawned
@@ -108,6 +110,10 @@ void AMainCharacter::BeginPlay()
 	if(Melee)
 	{
 		AcquireAbility(Melee);
+	}
+	if(HealthRegeneration)
+	{
+		AcquireAbility(HealthRegeneration);
 	}
 }
 
@@ -418,6 +424,9 @@ void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 	// Attack
 	PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &AMainCharacter::Attack);
+
+	// HealthRegeneration
+	PlayerInputComponent->BindAction("SkillOne", IE_Pressed, this, &AMainCharacter::RegenerateHealth);
 }
 
 // Moving forward/ backward
@@ -564,7 +573,7 @@ void AMainCharacter::Attack()
 		}
 		else
 		{
-			AbilitySystemComponent->TargetConfirm();
+			AbilitySystemComponent->TargetCancel();
 		}
 
 		// Play swing sound
@@ -587,6 +596,11 @@ float AMainCharacter::TakeDamage(float Damage, FDamageEvent const& DamageEvent, 
 	}
 	Health -= Damage;
 	Health = FMath::Clamp(Health, 0.f, MaxHealth);
+
+	if(AttributeSetComponent)
+	{
+		AttributeSetComponent->Health.SetBaseValue(Health);
+	}
 
 	if (Health <= 0.f)
 	{
@@ -675,4 +689,48 @@ void AMainCharacter::OnHealthChange(float CurrentValue, float MaxValue)
 	{
 		Die();
 	}
+}
+
+// Push and stun target
+void AMainCharacter::PushStunTarget(AEnemy* Target, FVector ImpulseDirection, float PushForce, float StunTime)
+{
+	if (Target)
+	{
+		// Set the target ground friction to 0.f
+		float OriginalTargetGroundFriction = Target->GetCharacterMovement()->GroundFriction;
+		Target->GetCharacterMovement()->GroundFriction = 0.f;
+
+		// Push the enemy target away
+		Target->GetCharacterMovement()->AddImpulse(ImpulseDirection * PushForce, true);
+
+		// Stun the enemy, which is disable their control, if the StunTime is greater than 0.f
+		if (StunTime > 0.f)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Disabling AI Controller"));
+			Target->BeingStun(StunTime);
+		}
+
+		// After 0.5s, set the friction back to its original value
+		PushStunDelegate.BindLambda([Target, OriginalTargetGroundFriction] 
+            {
+                Target->GetCharacterMovement()->GroundFriction = OriginalTargetGroundFriction;
+            }
+        );
+
+		GetWorldTimerManager().SetTimer(PushStunTimerHandle, PushStunDelegate, PushStunFrictionRestoreTime, false);	
+	}
+}
+
+void AMainCharacter::RegenerateHealth()
+{
+	// Activate the ability
+	if (HealthRegeneration)
+	{
+		AbilitySystemComponent->TryActivateAbilityByClass(HealthRegeneration);
+	}
+	else
+	{
+		AbilitySystemComponent->TargetCancel();
+	}
+
 }

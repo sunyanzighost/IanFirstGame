@@ -4,10 +4,12 @@
 #include "MeleeDamageEffect.h"
 
 #include "EnemyAttributeSet.h"
+#include "GameplayTagsManager.h"
 
 // Default constructor
 UMeleeDamageEffect::UMeleeDamageEffect()
 {
+	// Default values
 	Damage = -30.f;
 	
 	DurationPolicy = EGameplayEffectDurationType::Instant;
@@ -23,4 +25,9 @@ UMeleeDamageEffect::UMeleeDamageEffect()
 	HealthModifier.ModifierMagnitude = FGameplayEffectModifierMagnitude(Damage);
 	
 	Modifiers.Add(HealthModifier);
+
+	// Add a gameplay tag
+	FGameplayTag Tag = UGameplayTagsManager::Get().RequestGameplayTag(FName("Ability.Melee.Damage"));
+	
+	InheritableGameplayEffectTags.AddTag(Tag);
 }

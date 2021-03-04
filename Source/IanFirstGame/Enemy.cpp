@@ -53,7 +53,7 @@ AEnemy::AEnemy()
 	WeaponBox2->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 
 	// Setup default values
-	AcceptanceDistance = 80.f;
+	AcceptanceDistance = 30.f;
 
 	AttackMaxWaitTime = 3.f;
 	AttackMinWaitTime = 1.f;
@@ -134,7 +134,6 @@ void AEnemy::MoveTo(AMainCharacter* Target)
 	MoveRequest.SetAcceptanceRadius(AcceptanceDistance);
 
 	AIController->MoveTo(MoveRequest);
-
 }
 
 // When player enter the detection sphere of the enemy 
@@ -143,6 +142,8 @@ void AEnemy::DetectionSphereBeginOverlap(UPrimitiveComponent* OverlappedComponen
 	if (AMainCharacter* PlayerCharacter = Cast<AMainCharacter>(OtherActor))
 	{
 		bDetectionSphereOverlapping = true;
+
+		PlayerTargetForMovingTo = PlayerCharacter;
 		
 		// Speed-up
 		GetCharacterMovement()->MaxWalkSpeed = MaximumWalkSpeed;
@@ -168,6 +169,8 @@ void AEnemy::DetectionSphereEndOverlap(UPrimitiveComponent* OverlappedComponent,
 	if (AMainCharacter* PlayerCharacter = Cast<AMainCharacter>(OtherActor))
 	{
 		bDetectionSphereOverlapping = false;
+
+		PlayerTargetForMovingTo = nullptr;
 
 		GetWorldTimerManager().ClearTimer(MoveToTimer);
 
@@ -208,7 +211,7 @@ void AEnemy::CombatSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AA
 	{
 		bCombatSphereOverlapping = false;
 
-		PlayerTarget = nullptr; // Set player target as null when end overlapping
+		PlayerTarget = nullptr; // Set player target as null when end overlapping the combat sphere
 
 		// Clear the enemy target for the player for this particular enemy
 		if (PlayerCharacter->GetEnemyTarget() == this)
@@ -220,15 +223,18 @@ void AEnemy::CombatSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AA
 			PlayerCharacter->GetMainPlayerController()->HideEnemyHealthBar();
 		}
 
-		// Clear the timer set for next attack
-		GetWorldTimerManager().ClearTimer(AttackTimer);
-
-		// Bind a function using delegate
-		MoveToDelegate.BindUFunction(this, FName("MoveTo"), PlayerCharacter);
-
-		if (bDetectionSphereOverlapping) // Move to player if the player is still inside the detection sphere
+		if (!bIsStun)
 		{
-			GetWorldTimerManager().SetTimer(MoveToTimer, MoveToDelegate, MoveToWaitTime, false);
+			// Clear the timer set for next attack
+			GetWorldTimerManager().ClearTimer(AttackTimer);
+
+			// Bind a function using delegate
+			MoveToDelegate.BindUFunction(this, FName("MoveTo"), PlayerCharacter);
+
+			if (bDetectionSphereOverlapping) // Move to player if the player is still inside the detection sphere
+			{
+				GetWorldTimerManager().SetTimer(MoveToTimer, MoveToDelegate, MoveToWaitTime, false);
+			}
 		}
 	}
 }
@@ -420,5 +426,73 @@ void AEnemy::OnHealthChange(float CurrentValue, float MaxValue)
 	{
 		Die();
 	}
+}
+
+// Enable the AI movement
+void AEnemy::EnableMovement()
+{
+	bIsStun = false;
+	
+	if(bIsDead) return; // Early return if already dead
+
+	// Resume the montage
+	UAnimInstance* EnemyAnimInstance = GetMesh()->GetAnimInstance();
+	EnemyAnimInstance->Montage_Resume(ReactStunMontage);
+
+	if (bCombatSphereOverlapping)
+	{
+		Attack();
+	}
+	else if (bDetectionSphereOverlapping && PlayerTargetForMovingTo)
+	{
+		MoveTo(PlayerTargetForMovingTo);
+	}
+	else
+	{
+		if (AIController)
+		{
+			// Restart the AI logic in Behavior Tree 
+			if (AIController->GetBrainComponent())
+			{
+				AIController->GetBrainComponent()->RestartLogic();
+			}
+		}
+	}
+}
+
+// Disable the AI movement
+void AEnemy::DisableMovement()
+{
+	// Clear all existing timers
+	GetWorldTimerManager().ClearTimer(MoveToTimer);
+	GetWorldTimerManager().ClearTimer(AttackTimer);
+	GetWorldTimerManager().ClearTimer(DestroyTimer);
+
+	// Stop the enemy current movement
+	if(AIController)
+	{
+		AIController->StopMovement();
+	}
+}
+
+// Being stun by a certain amount of time
+void AEnemy::BeingStun(float StunTime)
+{
+	bIsStun = true;
+
+	bAttacking = false;
+	
+	DisableMovement();
+
+	// Play ReactStun montage
+	UAnimInstance* EnemyAnimInstance = GetMesh()->GetAnimInstance();
+
+	if(!EnemyAnimInstance || !ReactStunMontage) return; // Early return if no ref.
+
+	EnemyAnimInstance->Montage_Play(ReactStunMontage, 1.f);
+
+	EnemyAnimInstance->Montage_Pause(ReactStunMontage);
+
+	GetWorldTimerManager().SetTimer(BeingStunTimerHandle, this, &AEnemy::EnableMovement, StunTime, false);
 }
 

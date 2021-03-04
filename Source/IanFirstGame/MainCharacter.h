@@ -132,6 +132,13 @@ private:
 	// GameplayAbilities
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Gameplay Ability", meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<UGameplayAbility> Melee;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Gameplay Ability", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<UGameplayAbility> HealthRegeneration;
+
+	// Push stun timer and delegate
+	FTimerDelegate PushStunDelegate;
+	FTimerHandle PushStunTimerHandle;
+	float PushStunFrictionRestoreTime;
 
 public:
 	// Sets default values for this character's properties
@@ -272,6 +279,12 @@ public:
 	// When the health attribute being changed
 	UFUNCTION()
 	void OnHealthChange(float CurrentValue, float MaxValue);
+
+	// Push and stun target
+	void PushStunTarget(class AEnemy* Target, FVector ImpulseDirection, float PushForce, float StunTime);
+
+	// Ability: HealthRegeneration
+	void RegenerateHealth();
 
 protected:
 	// Called when the game starts or when spawned

@@ -8,8 +8,8 @@
 
 // Default constructor
 UMainCharacterAttributeSet::UMainCharacterAttributeSet()
-	:Health(100.f),
-	MaxHealth(100.f),
+	:Health(200.f),
+	MaxHealth(200.f),
 	Mana(200.f),
 	MaxMana(200.f)
 {
@@ -24,7 +24,7 @@ void UMainCharacterAttributeSet::PostGameplayEffectExecute(const FGameplayEffect
 	if(Data.EvaluatedData.Attribute.GetUProperty() == FindFieldChecked<FProperty>(UMainCharacterAttributeSet::StaticClass(), GET_MEMBER_NAME_CHECKED(UMainCharacterAttributeSet, Health)))
 	{
 		Health.SetCurrentValue(FMath::Clamp(Health.GetCurrentValue(), 0.f, MaxHealth.GetCurrentValue()));
-
+	
 		OnHealthChange.Broadcast(Health.GetCurrentValue(), MaxHealth.GetCurrentValue());
 	}
 }

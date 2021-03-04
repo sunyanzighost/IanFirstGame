@@ -7,6 +7,8 @@
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 #include "AbilitySystemBlueprintLibrary.h"
+#include "Enemy.h"
+#include "MainCharacter.h"
 
 // Default constructor
 UMelee::UMelee()
@@ -17,6 +19,10 @@ UMelee::UMelee()
 
 	// Default values
 	GameplayEffectLevel = 1.f;
+
+	MeleePushForce = 200.f;
+
+	MeleeStunTime = 2.f;
 }
 
 // BeginPlay() of the ability
@@ -70,10 +76,27 @@ void UMelee::AbilityDamage(FGameplayEventData Payload)
 	// Make game data from the target actor, for the ApplyGameplayEffectToTarget function
 	FGameplayAbilityTargetDataHandle TargetDataHandle = UAbilitySystemBlueprintLibrary::AbilityTargetDataFromActor(EnemyTarget);	
 
+	// Apply the damage effect to the target
 	if(MeleeEffect)
 	{
 		UGameplayAbility::ApplyGameplayEffectToTarget(AbilityHandle, AbilityActorInfo, AbilityActivationInfo, TargetDataHandle, MeleeEffect, GameplayEffectLevel);
-		UE_LOG(LogTemp, Warning, TEXT("Applying gameplay effect to enemy!"));
+	}
+
+	// Push and stun the target
+	if(AEnemy* Enemy = Cast<AEnemy>(EnemyTarget))
+	{
+		// Calculate the impulse direction and normalize it
+		FVector TargetLocation = Enemy->GetActorLocation();
+
+		AMainCharacter* OwningCharacter = Cast<AMainCharacter>(GetOwningActorFromActorInfo());
+
+		if(!OwningCharacter) return;
+
+		FVector ImpulseDirection = TargetLocation - OwningCharacter->GetActorLocation();
+
+		ImpulseDirection.Normalize();
+
+		OwningCharacter->PushStunTarget(Enemy, ImpulseDirection, MeleePushForce, MeleeStunTime);
 	}
 }
 

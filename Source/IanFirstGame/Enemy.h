@@ -49,6 +49,10 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	UAnimMontage* DeathMontage;
 
+	// ReactStun montage ref.
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* ReactStunMontage;
+
 	// Sounds
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sounds", meta = (AllowPrivateAccess = "true"))
 	class USoundCue* DetectionSound;
@@ -76,6 +80,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	bool bIsDead;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	bool bIsStun;
 
 	// Attack wait time
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
@@ -110,9 +117,14 @@ private:
 	// Reference to the main character
 	class AMainCharacter* PlayerTarget;
 
+	class AMainCharacter* PlayerTargetForMovingTo;
+
 	// Interp speed to face enemy
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	float InterpToPlayerSpeed;
+
+	// Timer for being stunned
+	FTimerHandle BeingStunTimerHandle;
 
 public:
 	// Sets default values for this character's properties
@@ -202,6 +214,15 @@ public:
 	// When the health attribute being changed
 	UFUNCTION()
 	void OnHealthChange(float CurrentValue, float MaxValue);
+
+	// Enable the AI movement
+	void EnableMovement();
+
+	// Disable the AI movement
+	void DisableMovement();
+
+	// Being stun by a certain amount of time
+	void BeingStun(float StunTime);
 
 protected:
 	// Called when the game starts or when spawned

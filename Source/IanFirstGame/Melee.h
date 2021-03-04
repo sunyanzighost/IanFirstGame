@@ -20,7 +20,7 @@ private:
 	class UAnimMontage* MeleeMontage;
 
 	// Gameplay effect
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Montage", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Gameplay effect", meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<UGameplayEffect> MeleeEffect;
 
 	FGameplayAbilitySpecHandle AbilityHandle;
@@ -28,6 +28,9 @@ private:
     FGameplayAbilityActivationInfo AbilityActivationInfo;
 
 	float GameplayEffectLevel;
+
+	float MeleeStunTime;
+	float MeleePushForce;
 	
 public:
 	// Default Constructor
