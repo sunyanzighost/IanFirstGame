@@ -33,4 +33,5 @@ public:
 	virtual void PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data) override;
 
 	FOnAttributeChangeDelegate OnHealthChange;
+	FOnAttributeChangeDelegate OnManaChange;
 };

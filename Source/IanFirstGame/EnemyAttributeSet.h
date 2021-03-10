@@ -6,7 +6,7 @@
 #include "AttributeSet.h"
 #include "EnemyAttributeSet.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnEnemyAttributeChangeDelegate, float, CurrentValue, float, MaxValue);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnEnemyAttributeChangeDelegate, float, CurrentValue, float, MaxValue, AActor*, Instigator);
 
 UCLASS()
 class IANFIRSTGAME_API UEnemyAttributeSet : public UAttributeSet

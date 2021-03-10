@@ -2,6 +2,8 @@
 
 
 #include "MainCharacter.h"
+
+#include "AbilitySystemBlueprintLibrary.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -9,6 +11,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
 #include "Enemy.h"
+#include "GameplayTagsManager.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "MainPlayerController.h"
 #include "IanFirstGameSaveGame.h"
@@ -16,6 +19,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "MainCharacterAttributeSet.h"
 #include "WeaponStorage.h"
+#include "Components/CapsuleComponent.h"
 
 // Sets default values
 AMainCharacter::AMainCharacter()
@@ -100,11 +104,16 @@ void AMainCharacter::BeginPlay()
 
 		GameInstance->SetLevelSwitched(false);
 	}
-
+	
+	// Bind functions to be called when the attributes are being changed
 	if(AttributeSetComponent)
 	{
 		AttributeSetComponent->OnHealthChange.AddDynamic(this, &AMainCharacter::OnHealthChange);
+		AttributeSetComponent->OnManaChange.AddDynamic(this, &AMainCharacter::OnManaChange);
 	}
+
+	// Bind function to be called when the capsule component is being overlapped
+	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &AMainCharacter::OnCapsuleOverlap);
 
 	// Acquire abilities
 	if(Melee)
@@ -114,6 +123,14 @@ void AMainCharacter::BeginPlay()
 	if(HealthRegeneration)
 	{
 		AcquireAbility(HealthRegeneration);
+	}
+	if(Dash)
+	{
+		AcquireAbility(Dash);
+	}
+	if(Laser)
+	{
+		AcquireAbility(Laser);
 	}
 }
 
@@ -320,65 +337,9 @@ FString AMainCharacter::GetCurrentMapName()
 void AMainCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-	float DeltaStamina = StaminaRate * DeltaTime;
-
-	switch (StaminaStatus)
-	{
-	case EStaminaStatus::ESS_Normal:
-		if (bSprintKeyDown) // When sprinting
-		{
-			Stamina -= DeltaStamina;
-			Stamina = FMath::Clamp(Stamina, 0.f, MaxStamina);
-			if (Stamina <= MinSprintRequriedStamina)
-			{
-				SetStaminaStatus(EStaminaStatus::ESS_BelowMinimum);
-			}
-		}
-		else // When not sprinting
-		{
-			Stamina += DeltaStamina;
-			Stamina = FMath::Clamp(Stamina, 0.f, MaxStamina);
-		}
-		break;
-	case EStaminaStatus::ESS_BelowMinimum:
-		if (bSprintKeyDown) // When sprinting
-		{
-			Stamina -= DeltaStamina;
-			Stamina = FMath::Clamp(Stamina, 0.f, MaxStamina);
-			if (Stamina <= 0.f)
-			{
-				SetStaminaStatus(EStaminaStatus::ESS_Exhausted);
-				SetPlayerStatus(EPlayerStatus::EPS_Normal); // Change the character speed back to normal by setting the PlayerStatus variable
-			}
-		}
-		else // When not sprinting
-		{
-			Stamina += DeltaStamina;
-			Stamina = FMath::Clamp(Stamina, 0.f, MaxStamina);
-			if (Stamina >= MinSprintRequriedStamina) { SetStaminaStatus(EStaminaStatus::ESS_Normal); }
-		}
-		break;
-	case EStaminaStatus::ESS_Exhausted:
-		if (bSprintKeyDown)
-		{
-			Stamina = 0.f;
-		}
-		else
-		{
-			SetStaminaStatus(EStaminaStatus::ESS_Recovery);
-		}
-		break;
-	case EStaminaStatus::ESS_Recovery:
-		Stamina += DeltaStamina;
-		if (Stamina >= MinSprintRequriedStamina)
-		{
-			SetStaminaStatus(EStaminaStatus::ESS_Normal);
-		}
-		break;
-	default:
-		;
-	}
+	
+	// Do the Stamina thing
+	StaminaFunction(DeltaTime);
 
 	// Interping towards the enemy target yaw rotation
 	if (bAttacking && EnemyTarget) // Only interp when attacking and there is a valid enemy target
@@ -427,6 +388,12 @@ void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 	// HealthRegeneration
 	PlayerInputComponent->BindAction("SkillOne", IE_Pressed, this, &AMainCharacter::RegenerateHealth);
+
+	// Dash
+	PlayerInputComponent->BindAction("SkillTwo", IE_Pressed, this, &AMainCharacter::ExecuteDashAbility);
+
+	// Laser
+	PlayerInputComponent->BindAction("SkillThree", IE_Pressed, this, &AMainCharacter::FireLaser);
 }
 
 // Moving forward/ backward
@@ -550,22 +517,7 @@ void AMainCharacter::Attack()
 	if (EquippedWeapon && !bAttacking) // Only attack when there is a valid weapon ref. && not in the action of attacking
 	{
 		bAttacking = true;
-
-		// Get the animinstance of the player
-		// UAnimInstance* PlayerAnimInstance = GetMesh()->GetAnimInstance();
-		//
-		// if (!PlayerAnimInstance || !CombatMontage) return; // Early return if no ref.
-		//
-		// if (!CombatMontage) return; // Early return if no ref.
-		//
-		// int32 Skill = FMath::RandRange(0, CombatMontage->CompositeSections.Num() - 1);
-		//
-		// PlayerAnimInstance->Montage_Play(CombatMontage, 1.0f);
-		//
-		// FName SectionName = CombatMontage->CompositeSections[Skill].SectionName;
-		//
-		// PlayerAnimInstance->Montage_JumpToSection(SectionName, CombatMontage);
-
+		
 		// Activate the melee ability
 		if (Melee)
 		{
@@ -601,12 +553,9 @@ float AMainCharacter::TakeDamage(float Damage, FDamageEvent const& DamageEvent, 
 	{
 		AttributeSetComponent->Health.SetBaseValue(Health);
 	}
-
-	if (Health <= 0.f)
-	{
-		Die();
-	}
-
+	
+	OnHealthChange(Health, MaxHealth);
+	
 	return Damage;
 }
 
@@ -681,14 +630,24 @@ void AMainCharacter::AcquireAbility(TSubclassOf<UGameplayAbility> AbilityToAcqui
 }
 
 // When the health attribute being changed
-void AMainCharacter::OnHealthChange(float CurrentValue, float MaxValue)
+void AMainCharacter::OnHealthChange_Implementation(float CurrentValue, float MaxValue)
 {
 	Health = CurrentValue;
+
+	HealthPercentage = CurrentValue / MaxValue;
 
 	if(CurrentValue <= 0.f)
 	{
 		Die();
 	}
+}
+
+// When the mana attribute being changed
+void AMainCharacter::OnManaChange_Implementation(float CurrentValue, float MaxValue)
+{
+	ManaPercentage = CurrentValue / MaxValue;
+
+	UE_LOG(LogTemp, Warning, TEXT("mana changing!!!"));
 }
 
 // Push and stun target
@@ -733,4 +692,132 @@ void AMainCharacter::RegenerateHealth()
 		AbilitySystemComponent->TargetCancel();
 	}
 
+}
+
+void AMainCharacter::StaminaFunction(float DeltaTime)
+{
+	float DeltaStamina = StaminaRate * DeltaTime;
+
+	StaminaPercentage = Stamina / MaxStamina;
+
+	switch (StaminaStatus)
+	{
+	case EStaminaStatus::ESS_Normal:
+		if (bSprintKeyDown) // When sprinting
+			{
+			Stamina -= DeltaStamina;
+			Stamina = FMath::Clamp(Stamina, 0.f, MaxStamina);
+			if (Stamina <= MinSprintRequriedStamina)
+			{
+				SetStaminaStatus(EStaminaStatus::ESS_BelowMinimum);
+			}
+			}
+		else // When not sprinting
+			{
+			Stamina += DeltaStamina;
+			Stamina = FMath::Clamp(Stamina, 0.f, MaxStamina);
+			}
+		break;
+	case EStaminaStatus::ESS_BelowMinimum:
+		if (bSprintKeyDown) // When sprinting
+			{
+			Stamina -= DeltaStamina;
+			Stamina = FMath::Clamp(Stamina, 0.f, MaxStamina);
+			if (Stamina <= 0.f)
+			{
+				SetStaminaStatus(EStaminaStatus::ESS_Exhausted);
+				SetPlayerStatus(EPlayerStatus::EPS_Normal); // Change the character speed back to normal by setting the PlayerStatus variable
+			}
+			}
+		else // When not sprinting
+			{
+			Stamina += DeltaStamina;
+			Stamina = FMath::Clamp(Stamina, 0.f, MaxStamina);
+			if (Stamina >= MinSprintRequriedStamina) { SetStaminaStatus(EStaminaStatus::ESS_Normal); }
+			}
+		break;
+	case EStaminaStatus::ESS_Exhausted:
+		if (bSprintKeyDown)
+		{
+			Stamina = 0.f;
+		}
+		else
+		{
+			SetStaminaStatus(EStaminaStatus::ESS_Recovery);
+		}
+		break;
+	case EStaminaStatus::ESS_Recovery:
+		Stamina += DeltaStamina;
+		if (Stamina >= MinSprintRequriedStamina)
+		{
+			SetStaminaStatus(EStaminaStatus::ESS_Normal);
+		}
+		break;
+	default:
+		;
+	}
+}
+
+void AMainCharacter::SetCapsuleCollisionResponseToPawn(ECollisionResponse NewResponse)
+{
+	if (GetCapsuleComponent())
+	{
+		GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, NewResponse);
+	}
+}
+
+void AMainCharacter::OnCapsuleOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if(AEnemy* Enemy = Cast<AEnemy>(OtherActor))
+	{		
+		// Send a gameplay event with the below specific gameplay tag
+		FGameplayTag DamageEventTag = UGameplayTagsManager::Get().RequestGameplayTag(FName("Ability.Dash.Damage"));
+
+		FGameplayEventData TargetData;
+		TargetData.Instigator = this;
+		TargetData.Target = Enemy;
+		TargetData.EventTag = DamageEventTag;
+
+		UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(this, DamageEventTag, TargetData);
+		
+	}
+}
+
+void AMainCharacter::ExecuteDashAbility()
+{
+	if(Dash)
+	{
+		AbilitySystemComponent->TryActivateAbilityByClass(Dash);
+	}
+	else
+	{
+		AbilitySystemComponent->TargetCancel();
+	}
+}
+
+void AMainCharacter::ToggleCameraControlRotation(bool ShouldControlRotation)
+{
+	if(ShouldControlRotation)
+	{
+		GetCharacterMovement()->bOrientRotationToMovement = false;
+		bUseControllerRotationYaw = true;
+	}
+	else
+	{
+		GetCharacterMovement()->bOrientRotationToMovement = true;
+		bUseControllerRotationYaw = false;
+	}
+}
+
+void AMainCharacter::FireLaser()
+{
+	if(Laser)
+	{
+		AbilitySystemComponent->TryActivateAbilityByClass(Laser);
+	}
+	else
+	{
+		AbilitySystemComponent->TargetCancel();
+	}
 }

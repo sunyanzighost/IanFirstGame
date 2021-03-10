@@ -18,9 +18,6 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Particles", meta = (AllowPrivateAccess = "true"))
 	class UParticleSystem* HealthRegenerationParticle;
 
-public:
-	// Default constructor
-	UHealthRegenerationGameplayCue();
-	
+public:	
 	virtual bool OnExecute_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) const override;
 };

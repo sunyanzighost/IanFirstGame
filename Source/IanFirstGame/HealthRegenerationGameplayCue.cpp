@@ -3,13 +3,7 @@
 
 #include "HealthRegenerationGameplayCue.h"
 
-#include "GameplayTagsManager.h"
 #include "Kismet/GameplayStatics.h"
-
-UHealthRegenerationGameplayCue::UHealthRegenerationGameplayCue()
-{
-	GameplayCueTag = UGameplayTagsManager::Get().RequestGameplayTag(FName("Ability.HealthRegeneration.GameplayCue"));
-}
 
 bool UHealthRegenerationGameplayCue::OnExecute_Implementation(AActor* MyTarget,
                                                               const FGameplayCueParameters& Parameters) const

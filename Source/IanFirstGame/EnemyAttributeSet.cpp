@@ -2,6 +2,8 @@
 
 
 #include "EnemyAttributeSet.h"
+
+#include "GameplayEffect.h"
 #include "GameplayEffectExtension.h"
 #include "GameplayEffectTypes.h"
 
@@ -22,6 +24,6 @@ void UEnemyAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallb
 	{
 		Health.SetCurrentValue(FMath::Clamp(Health.GetCurrentValue(), 0.f, MaxHealth.GetCurrentValue()));
 
-		OnHealthChange.Broadcast(Health.GetCurrentValue(), MaxHealth.GetCurrentValue());
+		OnHealthChange.Broadcast(Health.GetCurrentValue(), MaxHealth.GetCurrentValue(),Data.EffectSpec.GetEffectContext().GetInstigator());
 	}
 }

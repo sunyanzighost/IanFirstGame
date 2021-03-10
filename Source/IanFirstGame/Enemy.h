@@ -186,7 +186,7 @@ public:
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
 	// Die
-	void Die();
+	void Die(AMainCharacter* PlayerCharacter);
 
 	// When ending death animation
 	UFUNCTION(BlueprintCallable, Category = "Combat")
@@ -213,7 +213,7 @@ public:
 	
 	// When the health attribute being changed
 	UFUNCTION()
-	void OnHealthChange(float CurrentValue, float MaxValue);
+	void OnHealthChange(float CurrentValue, float MaxValue, AActor* InstigatorActor);
 
 	// Enable the AI movement
 	void EnableMovement();

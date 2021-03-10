@@ -345,24 +345,26 @@ float AEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AC
 
 	if (Health <= 0.f)
 	{
-		Die();
-
 		// Give soul to the player when dead
-		AMainCharacter* PlayerCharacter = Cast<AMainCharacter>(DamageCauser->GetOwner());
-		if (PlayerCharacter)
+		if(AMainCharacter* PlayerCharacter = Cast<AMainCharacter>(DamageCauser->GetOwner()))
 		{
-			PlayerCharacter->IncrementSoul(SoulGiven);
-			PlayerCharacter->SetClosestEnemyAsTarget();
+			Die(PlayerCharacter);
 		}
-
 	}
 
 	return DamageAmount;
 }
 
-void AEnemy::Die()
+void AEnemy::Die(AMainCharacter* PlayerCharacter)
 {
 	bIsDead = true;
+
+	// Give soul to the player when dead
+	if (PlayerCharacter)
+	{
+		PlayerCharacter->IncrementSoul(SoulGiven);
+		PlayerCharacter->SetClosestEnemyAsTarget();
+	}
 
 	// Get ref. to animinstance
 	UAnimInstance* EnemyAnimInstance = GetMesh()->GetAnimInstance();
@@ -416,15 +418,16 @@ UAbilitySystemComponent* AEnemy::GetAbilitySystemComponent() const
 }
 
 // When the health attribute being changed
-void AEnemy::OnHealthChange(float CurrentValue, float MaxValue)
+void AEnemy::OnHealthChange(float CurrentValue, float MaxValue, AActor* InstigatorActor)
 {
 	Health = CurrentValue;
-
-	UE_LOG(LogTemp, Warning, TEXT("I am being attacked!"));
 	
 	if(CurrentValue <= 0.f)
 	{
-		Die();
+		if (AMainCharacter* PlayerCharacter = Cast<AMainCharacter>(InstigatorActor))
+		{
+			Die(PlayerCharacter);
+		}
 	}
 }
 

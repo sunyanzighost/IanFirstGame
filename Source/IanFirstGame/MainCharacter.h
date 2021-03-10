@@ -134,11 +134,23 @@ private:
 	TSubclassOf<UGameplayAbility> Melee;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Gameplay Ability", meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<UGameplayAbility> HealthRegeneration;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Gameplay Ability", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<UGameplayAbility> Dash;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Gameplay Ability", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<UGameplayAbility> Laser;
 
 	// Push stun timer and delegate
 	FTimerDelegate PushStunDelegate;
 	FTimerHandle PushStunTimerHandle;
 	float PushStunFrictionRestoreTime;
+
+	// Stats
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Character Stats", meta = (AllowPrivateAccess = "true"))
+	float HealthPercentage;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Character Stats", meta = (AllowPrivateAccess = "true"))
+	float ManaPercentage;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Character Stats", meta = (AllowPrivateAccess = "true"))
+	float StaminaPercentage;
 
 public:
 	// Sets default values for this character's properties
@@ -277,14 +289,37 @@ public:
 	void AcquireAbility(TSubclassOf<UGameplayAbility> AbilityToAcquire);
 
 	// When the health attribute being changed
-	UFUNCTION()
+	UFUNCTION(BlueprintNativeEvent, Category = "On Attribute Change")
 	void OnHealthChange(float CurrentValue, float MaxValue);
+
+	// When the mana attribute being changed
+	UFUNCTION(BlueprintNativeEvent, Category = "On Attribute Change")
+    void OnManaChange(float CurrentValue, float MaxValue);
 
 	// Push and stun target
 	void PushStunTarget(class AEnemy* Target, FVector ImpulseDirection, float PushForce, float StunTime);
 
 	// Ability: HealthRegeneration
 	void RegenerateHealth();
+
+	// Function for consuming and recovering Stamina
+	void StaminaFunction(float DeltaTime);
+
+	// Change CapsuleCollision to pawn to different collision response
+	void SetCapsuleCollisionResponseToPawn(ECollisionResponse NewResponse);
+
+	// On CapsuleComponentOverlap
+	UFUNCTION()
+	void OnCapsuleOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	// Ability: Dash
+	void ExecuteDashAbility();
+
+	// Toggle CameraControl for LaserAbility
+	void ToggleCameraControlRotation(bool ShouldControlRotation);
+
+	// Ability :Laser
+	void FireLaser();
 
 protected:
 	// Called when the game starts or when spawned

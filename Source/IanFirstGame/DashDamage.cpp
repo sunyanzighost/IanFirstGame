@@ -1,16 +1,15 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "MeleeDamageEffect.h"
+#include "DashDamage.h"
 
 #include "EnemyAttributeSet.h"
 #include "GameplayTagsManager.h"
 
-// Default constructor
-UMeleeDamageEffect::UMeleeDamageEffect()
+UDashDamage::UDashDamage()
 {
 	// Default values
-	Damage = -30.f;
+	Damage = -10.f;
 
 	// Duration policy
 	DurationPolicy = EGameplayEffectDurationType::Instant;
@@ -29,7 +28,7 @@ UMeleeDamageEffect::UMeleeDamageEffect()
 	Modifiers.Add(HealthModifier);
 
 	// Add a gameplay tag
-	FGameplayTag Tag = UGameplayTagsManager::Get().RequestGameplayTag(FName("Ability.Melee.Damage"));
+	FGameplayTag Tag = UGameplayTagsManager::Get().RequestGameplayTag(FName("Ability.Dash.Damage"));
 	
 	InheritableGameplayEffectTags.AddTag(Tag);
 }

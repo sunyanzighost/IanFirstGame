@@ -27,4 +27,12 @@ void UMainCharacterAttributeSet::PostGameplayEffectExecute(const FGameplayEffect
 	
 		OnHealthChange.Broadcast(Health.GetCurrentValue(), MaxHealth.GetCurrentValue());
 	}
+
+	// If Mana is the attribute being altered by any game effect
+	if(Data.EvaluatedData.Attribute.GetUProperty() == FindFieldChecked<FProperty>(UMainCharacterAttributeSet::StaticClass(), GET_MEMBER_NAME_CHECKED(UMainCharacterAttributeSet, Mana)))
+	{
+		Mana.SetCurrentValue(FMath::Clamp(Mana.GetCurrentValue(), 0.f, MaxMana.GetCurrentValue()));
+	
+		OnManaChange.Broadcast(Mana.GetCurrentValue(), MaxMana.GetCurrentValue());
+	}
 }
