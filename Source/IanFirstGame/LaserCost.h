@@ -4,21 +4,21 @@
 
 #include "CoreMinimal.h"
 #include "GameplayEffect.h"
-#include "DashDamage.generated.h"
+#include "LaserCost.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class IANFIRSTGAME_API UDashDamage : public UGameplayEffect
+class IANFIRSTGAME_API ULaserCost : public UGameplayEffect
 {
 	GENERATED_BODY()
 
 private:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dash", meta = (AllowPrivateAccess = "true"))
-	float Damage;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Laser", meta = (AllowPrivateAccess = "true"))
+	float ManaCost;
 	
 public:
 	// Default constructor
-	UDashDamage();
+	ULaserCost();
 };

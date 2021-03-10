@@ -40,16 +40,24 @@ private:
 	const FGameplayAbilityActorInfo* AbilityActorInfo;
 	FGameplayAbilityActivationInfo AbilityActivationInfo;
 
+	float GameplayEffectLevel;
+
+	class AMainCharacter* PlayerCharacter;
 	
 public:
 	// Default constructor
 	ULaser();
 
-	// // End the ability
-	// UFUNCTION()
- //    void AbilityFinish();
-
 protected:
 	// BeginPlay of the ability
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
+
+public:
+	// Deal damage
+	UFUNCTION()
+	void AbilityDamage(FGameplayEventData Payload);
+
+	// On AbilityEnd
+	UFUNCTION()
+	void AbilityEnd(UGameplayAbility* Ability);
 };

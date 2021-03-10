@@ -15,7 +15,7 @@ class IANFIRSTGAME_API UMeleeDamageEffect : public UGameplayEffect
 	GENERATED_BODY()
 
 private:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Damage", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Melee", meta = (AllowPrivateAccess = "true"))
 	float Damage;
 	
 public:

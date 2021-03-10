@@ -13,6 +13,7 @@ UCLASS()
 class IANFIRSTGAME_API UDashCost : public UGameplayEffect
 {
 	GENERATED_BODY()
+	
 private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Dash", meta = (AllowPrivateAccess = "true"))
 	float ManaCost;
