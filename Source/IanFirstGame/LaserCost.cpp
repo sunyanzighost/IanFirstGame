@@ -32,5 +32,5 @@ ULaserCost::ULaserCost()
 	// Add a gameplay tag
 	FGameplayTag Tag = UGameplayTagsManager::Get().RequestGameplayTag(FName("Ability.Laser.Cost"));
 	
-	InheritableGameplayEffectTags.AddTag(Tag);	
+	InheritableGameplayEffectTags.AddTag(Tag);
 }

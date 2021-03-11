@@ -321,6 +321,8 @@ public:
 	// Ability :Laser
 	void FireLaser();
 
+	FORCEINLINE UMainCharacterAttributeSet* GetAttributeSetComponent(){return AttributeSetComponent;}
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;	

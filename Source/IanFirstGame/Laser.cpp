@@ -93,36 +93,43 @@ void ULaser::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGam
 // Deal damage
 void ULaser::AbilityDamage(FGameplayEventData Payload)
 {
-	// Apply the gameplay effect to the target enemies
-	if(LaserEffect)
+	if (HasEnoughAttributeToCast())
 	{
-		UGameplayAbility::ApplyGameplayEffectToTarget(AbilityHandle, AbilityActorInfo, AbilityActivationInfo, Payload.TargetData, LaserEffect, GameplayEffectLevel);
-	}
+		// Apply the gameplay effect to the target enemies
+		if(LaserEffect)
+		{
+			UGameplayAbility::ApplyGameplayEffectToTarget(AbilityHandle, AbilityActorInfo, AbilityActivationInfo, Payload.TargetData, LaserEffect, GameplayEffectLevel);
+		}
 
-	// Push and stun the enemies
-	TArray<AActor*> TargetEnemiesArray = UAbilitySystemBlueprintLibrary::GetActorsFromTargetData(Payload.TargetData, 0);
+		// Push and stun the enemies
+		TArray<AActor*> TargetEnemiesArray = UAbilitySystemBlueprintLibrary::GetActorsFromTargetData(Payload.TargetData, 0);
 
-	if(TargetEnemiesArray.Num() <= 0) return; // Early return if there is no target in the enemy array
+		if(TargetEnemiesArray.Num() <= 0) return; // Early return if there is no target in the enemy array
 
-	if(!PlayerCharacter) return; // Early return
+		if(!PlayerCharacter) return; // Early return
 
-	for(auto Actor : TargetEnemiesArray)
-	{
-		// Cast to AEnemy class
-		AEnemy* Enemy = Cast<AEnemy>(Actor);
+		for(auto Actor : TargetEnemiesArray)
+		{
+			// Cast to AEnemy class
+			AEnemy* Enemy = Cast<AEnemy>(Actor);
 
-		// Calculate the impulse direction
-		FVector ImpulseDirection;
+			// Calculate the impulse direction
+			FVector ImpulseDirection;
 
-		ALaserBeam* LaserBeam = Cast<ALaserBeam>(SpawnedLaserBeam);
+			ALaserBeam* LaserBeam = Cast<ALaserBeam>(SpawnedLaserBeam);
 
-		FVector EnemyLocation = Enemy->GetActorLocation();
-		FVector LaserEndLocation = LaserBeam->GetLaserEndSphere()->GetComponentLocation();
+			FVector EnemyLocation = Enemy->GetActorLocation();
+			FVector LaserEndLocation = LaserBeam->GetLaserEndSphere()->GetComponentLocation();
 
-		ImpulseDirection = EnemyLocation - LaserEndLocation;
-		ImpulseDirection.Normalize();
+			ImpulseDirection = EnemyLocation - LaserEndLocation;
+			ImpulseDirection.Normalize();
 		
-		PlayerCharacter->PushStunTarget(Enemy, ImpulseDirection, LaserPushForce, LaserStunTime);
+			PlayerCharacter->PushStunTarget(Enemy, ImpulseDirection, LaserPushForce, LaserStunTime);
+		}
+	}
+	else
+	{
+		EndAbility(AbilityHandle, AbilityActorInfo, AbilityActivationInfo, false, true);
 	}
 }
 
@@ -145,4 +152,6 @@ void ULaser::AbilityEnd(UGameplayAbility* Ability)
 
 	// Stop the montage
 	MontageStop();
+
+	UE_LOG(LogTemp, Warning, TEXT("not enough mana for Laser!"));
 }
