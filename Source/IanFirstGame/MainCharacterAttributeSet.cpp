@@ -8,8 +8,8 @@
 
 // Default constructor
 UMainCharacterAttributeSet::UMainCharacterAttributeSet()
-	:Health(200.f),
-	MaxHealth(200.f),
+	:Health(300.f),
+	MaxHealth(300.f),
 	Mana(200.f),
 	MaxMana(200.f)
 {
